@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 # مشخصات ربات
-TOKEN = "8040385853:AAFr9KQHLay0aR06Zvp2xl2Jj7Yvn7xJSY0"
+TOKEN = 8040385853:AAFr9KQHLay0aR06Zvp2xl2Jj7Yvn7xJSY0
 CHANNEL_ID = "@EditNameh_IRAN"  # آیدی کانال با @
 
 # جدول تبدیل حروف فارسی به نمادهای خط میخی (نمونه‌ای)
