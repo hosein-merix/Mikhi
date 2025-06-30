@@ -1,69 +1,49 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext
+import os
+import logging
 
-# مشخصات ربات
-TOKEN = 8040385853:AAFr9KQHLay0aR06Zvp2xl2Jj7Yvn7xJSY0
-CHANNEL_ID = "@EditNameh_IRAN"  # آیدی کانال با @
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHANNEL_ID = "@EditNameh_IRAN"
 
-# جدول تبدیل حروف فارسی به نمادهای خط میخی (نمونه‌ای)
+logging.basicConfig(level=logging.INFO)
+
 cuneiform_map = {
-    'ا': '𒀀', 'ب': '𒁀', 'پ': '𒁁', 'ت': '𒋾', 'ث': '𒊻', 'ج': '𒆜',
-    'چ': '𒆝', 'ح': '𒄩', 'خ': '𒄷', 'د': '𒁲', 'ذ': '𒊑',
-    'ر': '𒊒', 'ز': '𒍣', 'ژ': '𒆠', 'س': '𒊓', 'ش': '𒋗', 'ص': '𒍑',
-    'ض': '𒍖', 'ط': '𒋫', 'ظ': '𒍣𒁍', 'ع': '𒀭', 'غ': '𒅗',
-    'ف': '𒉺', 'ق': '𒆪', 'ک': '𒅗', 'گ': '𒄀', 'ل': '𒇽',
-    'م': '𒈬', 'ن': '𒉡', 'و': '𒉿', 'ه': '𒄭', 'ی': '𒅀',
+    "ا": "𒀀", "ب": "𒁀", "پ": "𒁁", "ت": "𒋾", "ث": "𒌨", "ج": "𒊩", "چ": "𒆜",
+    "ح": "𒄩", "خ": "𒅗", "د": "𒁲", "ذ": "𒁺", "ر": "𒊑", "ز": "𒊓", "ژ": "𒆠",
+    "س": "𒊬", "ش": "𒋛", "ص": "𒍑", "ض": "𒍣", "ط": "𒋾", "ظ": "𒌋", "ع": "𒀭",
+    "غ": "𒐈", "ف": "𒅗", "ق": "𒆪", "ک": "𒆠", "گ": "𒐊", "ل": "𒇽", "م": "𒈬",
+    "ن": "𒉡", "و": "𒉿", "ه": "𒄭", "ی": "𒅀", " ": "  "
 }
 
 def to_cuneiform(text):
-    return ''.join(cuneiform_map.get(ch, ch) for ch in text)
+    return ''.join(cuneiform_map.get(char, char) for char in text)
 
-async def is_user_member(user_id, context):
-    try:
-        member = await context.bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
-        return member.status in ['member', 'administrator', 'creator']
-    except:
-        return False
+async def start(update: Update, context: CallbackContext):
+    user = update.effective_user
+    chat_member = await context.bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user.id)
+    if chat_member.status in ['member', 'creator', 'administrator']:
+        await update.message.reply_text("👋 خوش اومدی! متن فارسی بفرست تا برات به خط میخی تبدیلش کنم.")
+    else:
+        keyboard = [
+            [InlineKeyboardButton("📢 عضویت در کانال", url="https://t.me/EditNameh_IRAN")],
+            [InlineKeyboardButton("✅ عضو شدم", callback_data="joined")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("برای استفاده از ربات، اول باید عضو کانال بشی:", reply_markup=reply_markup)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "سلام! 👋\nبه ربات خط میخی خوش اومدی.\nمتن فارسی‌تو بفرست تا به خط میخی برات تبدیل کنم. ✨"
-    )
+async def handle_message(update: Update, context: CallbackContext):
+    user = update.effective_user
+    chat_member = await context.bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user.id)
+    if chat_member.status in ['member', 'creator', 'administrator']:
+        converted = to_cuneiform(update.message.text)
+        await update.message.reply_text(f"🪶 متن شما به خط میخی:\n\n{converted}")
+    else:
+        await start(update, context)
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id
-    is_member = await is_user_member(user_id, context)
+app = ApplicationBuilder().token(BOT_TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    if not is_member:
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📢 عضویت در کانال", url="https://t.me/EditNameh_IRAN")]
-        ])
-        await update.message.reply_text(
-            "🔒 برای استفاده از ربات باید اول عضو کانال بشی.\n👇 روی دکمه زیر بزن و بعد دوباره امتحان کن:",
-            reply_markup=keyboard
-        )
-        return
-
-    input_text = update.message.text
-    output = to_cuneiform(input_text)
-
-    pretty_message = f"""
-📥 *متن شما:*
-`{input_text}`
-
-🔤 *تبدیل به خط میخی:*
-`{output}`
-
-📜 ربات *خط میخی*
-    """
-    await update.message.reply_text(pretty_message, parse_mode='Markdown')
-
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("✅ ربات راه‌اندازی شد.")
+if __name__ == "__main__":
     app.run_polling()
-
-if __name__ == '__main__':
-    main()
