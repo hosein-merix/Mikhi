@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mikhi-bot
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
+    envVars:
+      - key: BOT_TOKEN
+        value: 8040385853:AAFr9KQHLay0aR06Zvp2xl2Jj7Yvn7xJSY0
