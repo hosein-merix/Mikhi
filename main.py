@@ -3,7 +3,7 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackContext, ContextTypes, filters
 
-BOT_TOKEN = os.getenv("")  # در Zeabur تنظیم کن
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # در Zeabur تنظیم کن
 CHANNEL_ID = "@EditNameh_IRAN"
 
 logging.basicConfig(level=logging.INFO)
