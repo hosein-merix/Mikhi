@@ -3,7 +3,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 import os
 import logging
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("8040385853:AAFr9KQHLay0aR06Zvp2xl2Jj7Yvn7xJSY0")
 CHANNEL_ID = "@EditNameh_IRAN"
 
 logging.basicConfig(level=logging.INFO)
