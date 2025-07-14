@@ -1,13 +1,23 @@
 import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackContext, ContextTypes, filters
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    CallbackContext,
+    filters
+)
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # در Zeabur تنظیم کن
+# توکن از محیط گرفته میشه (Zeabur Variable)
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHANNEL_ID = "@EditNameh_IRAN"
 
+# لاگ‌برداری
 logging.basicConfig(level=logging.INFO)
 
+# نقشه تبدیل به خط میخی
 cuneiform_map = {
     "ا": "𒀀", "ب": "𒁀", "پ": "𒁁", "ت": "𒋾", "ث": "𒌨", "ج": "𒊩", "چ": "𒆜",
     "ح": "𒄩", "خ": "𒅗", "د": "𒁲", "ذ": "𒁺", "ر": "𒊑", "ز": "𒊓", "ژ": "𒆠",
@@ -16,8 +26,8 @@ cuneiform_map = {
     "ن": "𒉡", "و": "𒉿", "ه": "𒄭", "ی": "𒅀", " ": "  "
 }
 
-def to_cuneiform(text):
-    return ''.join(cuneiform_map.get(char, char) for char in text)
+def to_cuneiform(text: str) -> str:
+    return ''.join(cuneiform_map.get(c, c) for c in text)
 
 async def check_membership(user_id, context: ContextTypes.DEFAULT_TYPE) -> bool:
     try:
@@ -35,20 +45,28 @@ async def start(update: Update, context: CallbackContext):
             [InlineKeyboardButton("📢 عضویت در کانال", url="https://t.me/EditNameh_IRAN")],
             [InlineKeyboardButton("✅ عضو شدم", callback_data="joined")]
         ]
-        markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("برای استفاده از ربات، اول باید عضو کانال بشی:", reply_markup=markup)
+        await update.message.reply_text("برای استفاده از ربات، اول باید عضو کانال بشی:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def handle_private_message(update: Update, context: CallbackContext):
     user = update.effective_user
     if await check_membership(user.id, context):
-        text = update.message.text
-        converted = to_cuneiform(text)
+        converted = to_cuneiform(update.message.text)
         await update.message.reply_text(f"🪶 متن شما به خط میخی:\n\n{converted}")
     else:
         await start(update, context)
 
 async def convert_group_reply(update: Update, context: CallbackContext):
     if update.message.reply_to_message and update.message.text.startswith("تبدیل به میخی"):
-        original_msg: Message = update.message.reply_to_message
-        converted = to_cuneiform(original_msg.text)
-        await update.message.reply_text(f"🪶 نسخه میخی
+        original: Message = update.message.reply_to_message
+        converted = to_cuneiform(original.text)
+        await update.message.reply_text(f"🪶 تبدیل:\n\n{converted}")
+
+# راه‌اندازی برنامه
+app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_private_message))
+app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, convert_group_reply))
+
+if __name__ == "__main__":
+    app.run_polling()
